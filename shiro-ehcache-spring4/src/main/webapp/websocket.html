@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+<meta charset="UTF-8">
+<script src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+<link rel="stylesheet"
+	href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<link rel="stylesheet"
+	href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+<script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<title>webSocket-用户66</title>
+
+</head>
+
+<body>
+	<div class="page-header" id="tou">webSocket多终端聊天测试</div>
+	<div id="status" style="height: 50px;background: #abc;width: 500px;overflow-y:auto"></div>
+	<hr>
+	<div id="connDiv">
+	<input type="text" id="userId"></input>
+	<button class="btn btn-default" type="button" id="connection" >连接登录</button>
+	</div>
+	<div id="onlineUsersDiv" style="display:none">
+		<select id="onlineUsers">
+			
+		</select>
+	</div>
+	<hr>
+	<div class="well" id="msg" style="height:300px;overflow-y:auto"></div>
+	<div class="col-lg">
+		<div class="input-group">
+			<input type="text" class="form-control" placeholder="发送信息..."
+				id="message"> <span class="input-group-btn">
+				<button class="btn btn-default" type="button" id="send">发送</button>
+			</span>
+		</div>
+	</div>
+	
+	
+	<script type="text/javascript">
+	function getUserId(){
+		return $("#userId").val()
+	}
+	 
+	
+	$("#connection").click(function(){
+		var userId = getUserId()
+		alert('user->'+userId)
+		var websocket;
+		var statusDiv = $("#status")
+		
+		if ('WebSocket' in window) {
+			console.log("此浏览器支持websocket");
+			websocket = new WebSocket("ws://localhost:8080/prototype1/WebsocketEndpoint/"+userId);
+		} else {
+			console.log("此浏览器  不   支持websocket");
+		}
+		
+		websocket.onopen = function(evnt) {
+			statusDiv.html("用户“"+userId+"”链接服务器成功!")
+			$("#connDiv").hide()
+		}
+		websocket.onmessage = function(evnt) {
+			if(!evnt.data){
+				return 
+			}
+			var message = ''
+			var msg = JSON.parse(evnt.data)
+			if(!msg) return 
+			if(msg.type=='sys'){
+				message = evnt.data
+				msg.uid = 'sys'
+				updateUserList(msg.msg)
+			}else{
+				message = msg.msg 
+			}
+			
+			showMsg(message, msg.uid)
+		}
+		websocket.onerror = function(evnt) {
+			statusDiv.html(statusDiv.html()+"链接异常!<br>")
+		}
+		websocket.onclose = function(evnt) {
+			statusDiv.html(statusDiv.html()+"与服务器断开了链接!<br>")
+		}
+		$('#send').bind('click', function() {
+			if (websocket) {
+				var input = document.getElementById('message')
+				var us = document.getElementById('onlineUsers')
+				var message = input.value;
+				var msg = {
+					type:'umsg',
+					uid:userId,
+					to:us.value,
+					msg:message
+				}
+				websocket.send(JSON.stringify(msg));
+				showMsg(message)
+				input.value=''
+			} else {
+				alert('无法发送消息， 未与服务器链接！');
+			}
+		});
+	})
+	
+	var msgBox =  $("#msg")
+	function showMsg(msg, from){
+		var d = new Date()
+		var dStr = d.getHours()+":"+d.getMinutes()+":"+d.getSeconds()
+		if(!from){
+			msg = "to user"+document.getElementById('onlineUsers').value+" at "+dStr+": "+msg
+		}else{
+			msg = "from user"+from+" at "+dStr+": "+msg
+		}
+		msgBox.html(msgBox.html() + "<hr style='height:2px;border:none;border-top:2px dotted #00ff00;margin:0;padding:0'/>" + msg);
+	}
+	
+	function updateUserList(userIds){
+		var html = ''
+		for(var i=0; i<userIds.length; i++){
+			if(getUserId()==userIds[i]) continue
+			
+			html += '<option value="'+userIds[i]+'" >用户'+userIds[i]+'</option>'
+		}
+		$("#onlineUsers").html(html)
+		$("#onlineUsersDiv").show()
+	}
+	
+	
+	
+</script>
+</body>
+
+</html>
+

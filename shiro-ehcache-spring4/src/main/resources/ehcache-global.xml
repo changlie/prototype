@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache name="globalcache">
+
+    <diskStore path="java.io.tmpdir"/>
+
+    <!-- dao层，实体类-class信息缓存 -->
+    <cache name="entityClassCache"
+           maxEntriesLocalHeap="2000"
+           eternal="false"
+           timeToIdleSeconds="3600"
+           timeToLiveSeconds="0"
+           overflowToDisk="false"
+           statistics="true">
+    </cache>
+
+</ehcache>

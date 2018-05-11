@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+		http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+	
+    
+    <context:property-placeholder ignore-unresolvable="true" file-encoding="utf-8" location="classpath:config.properties" />
+    
+    <!-- spring可以自动去扫描base-package下面或者子包下面的java文件， 如果扫描到有 
+		@Component @Service @Repository等这些注解的类，则把这些类注册为bean -->
+    <context:component-scan base-package="com.yunjia" >
+    	<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    	<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
+	
+    
+   	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+		   <property name="driverClass" value="${jdbc.driverClassName}" />    
+			<property name="jdbcUrl" value="${jdbc.url}" />
+		   <property name="user" value="${jdbc.username}" />  
+		  <property name="password" value="${jdbc.password}" />   
+		
+		  <property name="minPoolSize" value="${jdbc.miniPoolSize}" />
+		   <property name="maxPoolSize" value="${jdbc.maxPoolSize}"/>
+		  
+		  <property name="initialPoolSize" value="${jdbc.initialPoolSize}"/>   
+		 <property name="maxIdleTime" value="${jdbc.maxIdleTime}"/>   
+		 <property name="acquireIncrement" value="${jdbc.acquireIncrement}"/>   
+		   <property name="acquireRetryAttempts" value="${jdbc.acquireRetryAttempts}"/>
+		   <property name="acquireRetryDelay" value="${jdbc.acquireRetryDelay}"/>
+		   <property name="testConnectionOnCheckin" value="${jdbc.testConnectionOnCheckin}"/>  
+		<property name="idleConnectionTestPeriod" value="${jdbc.idleConnectionTestPeriod}"/>   
+		 <property name="checkoutTimeout" value="${jdbc.checkoutTimeout}"/>
+	</bean>
+
+	
+    <!-- 使用annotation定义事务 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true" />  
+
+	<!-- 配置jdbcTemplate可使用jdbcTemplate来处理sql语句 -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+    	<property name="dataSource" ref="dataSource"></property>
+    </bean>
+    
+    
+    <!-- 缓存配置启用 -->
+    <cache:annotation-driven cache-manager="springCacheManager" />
+    <!-- Spring提供的基于的Ehcache实现的缓存管理器 -->
+    <bean id="ehcacheManager"
+        class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+        <property name="configLocation" value="classpath:ehcache-global.xml" />
+    </bean>
+    <bean id="springCacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+        <property name="cacheManager" ref="ehcacheManager" />
+        <property name="transactionAware" value="true" />
+    </bean>
+
+</beans>
